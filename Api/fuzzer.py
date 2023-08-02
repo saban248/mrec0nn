@@ -26,7 +26,7 @@ class FuzzerUI(QThread):
         if not self.fuzz.cancel:
             self.emitSetting.emit(self.fuzz.setting_fuzz)
         while self.fuzz.total < self.fuzz.size and not self.fuzz.cancel:
-            # self.msleep(200)
+            self.msleep(200)
             self.emitStatus.emit(self.fuzz.total, self.fuzz.size, self.fuzz.indexes.__len__(), self.fuzz.indexes)
         self.fuzz.killFuzz()
 
@@ -87,6 +87,7 @@ class MGetFuzzer:
         # /* START */
         Thread(target=self._check_status_code).start()
         s, e = 0, 0
+
         for i in range(self.setting_fuzz['threads']):
             e += len(self.LFuzzer) // self.setting_fuzz['threads']
             Thread(target=self.fuzzing, args=(self.LFuzzer[s:e],)).start()
@@ -116,6 +117,7 @@ class MGetFuzzer:
             sleep(0.8)
 
     def fuzzing(self, indexes: list):
+
         for index in indexes:
             self.total += 1
             if self.cancel:
@@ -128,7 +130,6 @@ class MGetFuzzer:
                 print(f'{Err}')
                 sleep(1)
                 continue
-
             data = {'ind': index, 'stat': response.status_code, 'typ': ("File" if "." in index else 'dir'),
                     'size': response.text.__len__()}
             if not self.setting_fuzz['content_and_length']:
@@ -139,7 +140,7 @@ class MGetFuzzer:
                     if self.validToAppend(response.status_code, response.text.__len__()):
                         self.indexes.append(data)
 
-    def validToAppend(self, code, length) -> bool:
+    def validToAppend(self, code, length=None) -> bool:
         if code == 200 and not self.setting_fuzz['content_and_length']:
             self.status_code_valid['captcha'] += 1
             return True
