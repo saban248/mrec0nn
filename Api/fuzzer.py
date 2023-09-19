@@ -111,6 +111,7 @@ class MGetFuzzer:
                 self.about_cancel = "server moved to captcha?,\n200 blocked fuzzer"
                 break
             elif self.status_code_valid['moved'] > 500:
+
                 self.cancel = 1
                 self.about_cancel = "server moved to another page, \n*redirect block fuzzer!"
                 break
