@@ -34,7 +34,7 @@ def clsAddress(url: str, proto=False):
         except ValueError:
             pass
     # fuck it
-    return url, port or 443 or 80, protocol, indexes or "/"
+    return url, port or 80, protocol, indexes or "/"
 
 
 def domainExist(url: str) -> bool | tuple[int, Any | None, str, str | Any, str, str]:
