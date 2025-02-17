@@ -90,30 +90,39 @@ class WMapper(QScrollArea):
         self.test(indexes, None, 0, items)
 
     def test(self, indexes:list[str], root:QTreeWidgetItem = None, index:int = 0, it:dict[str, QTreeWidgetItem]= None):
-        child = root
+
         if index>indexes.__len__()-1:return
-        for _i, path in enumerate(indexes[index].split("/")):
-            i = f"{path}{index}-{_i}"
+        p = indexes[index]
+        if p.startswith("/"):
+            p = p[1::]
+        parent = self.get_parent(p)
+        children = self.get_children(p)
+        root = it.get(parent)
+
+        for _i, path in enumerate(p.split("/")):
             if path == "" or path == " " or path == "'" or not path:
                 continue
+
             if not root:
                 root = QTreeWidgetItem([path])
                 _Widget.tree.addTopLevelItem(root)
-                it[path] = root
+                it[parent] = root
                 continue
 
             child = QTreeWidgetItem([path])
-            it.get(path, root).addChild(child)
+            it[children] = child
+
+            root.addChild(child)
             root = child
 
 
-        self.test(indexes, child, index+1, it)
+        self.test(indexes, None, index+1, it)
 
-    def __get_first_part(self, parts:list):
-        if not parts or parts.__len__() == 1:
-            return None
-        return parts[0]
+    def get_parent(self, path:str):
+        return path.split("/")[0]
 
+    def get_children(self, path:str):
+        return "".join(path.split("/")[1::])
 
     def TreeParent(self, indexes: list, parent: QTreeWidgetItem = None):
 
