@@ -6,6 +6,14 @@ from AppUI.style import Templates as Css, QButton, QLabel_
 from Api.mapper import ThreadMapper
 
 
+
+class _Widget:
+    m_grid:QGridLayout      = None
+    start:QPushButton       = None
+    url:QLabel              = None
+    tree:QTreeWidget        = None
+    
+
 class WMapper(QScrollArea):
 
     def __init__(self, parent_setting, parent=None):
@@ -23,23 +31,23 @@ class WMapper(QScrollArea):
         self.setFrameShape(0)
         self.MParent = QWidget()
         self.MParent.setStyleSheet(Css["Frame"])
-        self.MainGrid = QGridLayout()
-        self.MParent.setLayout(self.MainGrid)
+        _Widget.m_grid = QGridLayout()
+        self.MParent.setLayout(_Widget.m_grid)
         self.setWidget(self.MParent)
-
+        self.paths:dict[str, list] = dict()
         self.setTitles()
         self.setTree()
 
     def setTitles(self):
-        self.ui_t['bstart'] = QButton("Mapp", Css['button'] + "*{color:rgb(205,205,103);}")
-        self.ui_t['bstart'].setMinimumWidth(100)
-        self.ui_t['bstart'].clicked.connect(self.OpenMapper)
-        self.ui_t['bstart'].setFont(QFont("consolas", 11, QFont.Bold))
-        self.MainGrid.addWidget(self.ui_t['bstart'], 0, 0, Qt.AlignTop | Qt.AlignLeft)
-        self.ui_t['lurl'] = QLabel_(self.parent_setting['url'], Css['look-lbl'], tb=1)
-        self.ui_t['lurl'].installEventFilter(self)
+        _Widget.start = QButton("Mapp", Css['button'] + "*{color:rgb(205,205,103);}")
+        _Widget.start.setMinimumWidth(100)
+        _Widget.start.clicked.connect(self.OpenMapper)
+        _Widget.start.setFont(QFont("consolas", 11, QFont.Bold))
+        _Widget.m_grid.addWidget(_Widget.start, 0, 0, Qt.AlignTop | Qt.AlignLeft)
+        _Widget.url = QLabel_(self.parent_setting['url'], Css['look-lbl'], tb=1)
+        _Widget.url.installEventFilter(self)
 
-        self.MainGrid.addWidget(self.ui_t['lurl'], 0, 1, Qt.AlignTop)
+        _Widget.m_grid.addWidget(_Widget.url, 0, 1, Qt.AlignTop)
 
     def OpenMapper(self):
         self.setUiMode(1)
@@ -60,35 +68,52 @@ class WMapper(QScrollArea):
 
     def setUiMode(self, mode):
         if mode:
-            self.ui_t['bstart'].setText("Create Tree...")
-            self.ui_t['bstart'].setStyleSheet(Css['button']+"*{color:rgb(163,65,65);}")
+            _Widget.start.setText("Create Tree...")
+            _Widget.start.setStyleSheet(Css['button']+"*{color:rgb(163,65,65);}")
+            
         else:
-            self.ui_t['bstart'].setText("Mapp")
-            self.ui_t['bstart'].setStyleSheet(Css['button'])
+            _Widget.start.setText("Mapp")
+            _Widget.start.setStyleSheet(Css['button'])
 
     def setTree(self) -> None:
-        self.ui_i['tree'] = QTreeWidget()
+        _Widget.tree = QTreeWidget()
         # /* set column */
-        self.ui_i['tree'].setColumnCount(1)
-        self.ui_i['tree'].setHeaderLabel(f"All Indexes on {self.parent_setting['url']}")
-        self.ui_i['tree'].setStyleSheet(Css['Frame'])
-        self.MainGrid.addWidget(self.ui_i['tree'], 1, 0, 1, 2)
+        _Widget.tree.setColumnCount(1)
+        _Widget.tree.setHeaderLabel(f"All Indexes on {self.parent_setting['url']}")
+        _Widget.tree.setStyleSheet(Css['Frame'])
+        _Widget.m_grid.addWidget(_Widget.tree, 1, 0, 1, 2)
 
     # /* None
     def SetItemsTree(self, indexes: list[str]):
-        self.ui_i['tree'].clear()
-        for ind in indexes:
-            li, parent_name = self.setParentTreeName(ind)
-            # /* set parent per Tree */
-            if li:
-                li.pop(0)
-            if self.getItemParent(parent_name):
-                root = self.getItemParent(parent_name)
-            else:
-                root = QTreeWidgetItem([parent_name])
-                self.ui_i['tree'].addTopLevelItem(root)
+        _Widget.tree.clear()
+        items:dict[str, QTreeWidgetItem] = dict()
+        self.test(indexes, None, 0, items)
 
-            self.TreeParent(li, root)
+    def test(self, indexes:list[str], root:QTreeWidgetItem = None, index:int = 0, it:dict[str, QTreeWidgetItem]= None):
+        child = root
+        if index>indexes.__len__()-1:return
+        for _i, path in enumerate(indexes[index].split("/")):
+            i = f"{path}{index}-{_i}"
+            if path == "" or path == " " or path == "'" or not path:
+                continue
+            if not root:
+                root = QTreeWidgetItem([path])
+                _Widget.tree.addTopLevelItem(root)
+                it[path] = root
+                continue
+
+            child = QTreeWidgetItem([path])
+            it.get(path, root).addChild(child)
+            root = child
+
+
+        self.test(indexes, child, index+1, it)
+
+    def __get_first_part(self, parts:list):
+        if not parts or parts.__len__() == 1:
+            return None
+        return parts[0]
+
 
     def TreeParent(self, indexes: list, parent: QTreeWidgetItem = None):
 
@@ -109,30 +134,30 @@ class WMapper(QScrollArea):
     def getItemParent(self, name):
         try:
 
-            return self.ui_i['tree'].findItems(name, Qt.MatchFlag.MatchContains)[0]
+            return _Widget.tree.findItems(name, Qt.MatchFlag.MatchContains)[0]
         except IndexError:
             return False
 
     # /* TODO: */
     def changeUrl(self, mode):
-        url = self.ui_t['lurl'].text()
-        self.ui_t['lurl'].deleteLater()
+        url = _Widget.url.text()
+        _Widget.url.deleteLater()
         if mode:
-            self.ui_t['lurl'] = QLineEdit()
-            self.ui_t['lurl'].setText(url)
-            self.ui_t['lurl'].setStyleSheet(Css['button'])
-            self.ui_t['lurl'].setAlignment(Qt.AlignCenter)
-            self.ui_t['lurl'].setMaximumWidth(self.width() // 2)
-            self.ui_t['lurl'].setMinimumHeight(25)
+            _Widget.url = QLineEdit()
+            _Widget.url.setText(url)
+            _Widget.url.setStyleSheet(Css['button'])
+            _Widget.url.setAlignment(Qt.AlignCenter)
+            _Widget.url.setMaximumWidth(self.width() // 2)
+            _Widget.url.setMinimumHeight(25)
         else:
-            self.ui_t['lurl'] = QLabel_(url, Css['look-lbl'])
+            _Widget.url = QLabel_(url, Css['look-lbl'])
 
-        self.ui_t['lurl'].installEventFilter(self)
-        self.MainGrid.addWidget(self.ui_t['lurl'], 0, 1, Qt.AlignTop)
+        _Widget.url.installEventFilter(self)
+        _Widget.m_grid.addWidget(_Widget.url, 0, 1, Qt.AlignTop)
 
     def eventFilter(self, Type: QObject, Event: QEvent) -> bool:
         if Event.type() == QEvent.MouseButtonDblClick:
-            if Type == self.ui_t['lurl']:
+            if Type == _Widget.url:
                 if type(Type) == QLabel:
                     self.changeUrl(1)
                 elif type(Type) == QLineEdit:
@@ -140,16 +165,16 @@ class WMapper(QScrollArea):
 
         elif Event.type() == QEvent.KeyPress:
             if Event.key() == Qt.Key_Enter - 1:
-                if Type is self.ui_t['lurl'] and type(Type) == QLineEdit:
+                if Type is _Widget.url and type(Type) == QLineEdit:
                     # /* TODO: . . . */
-                    self.parent_setting['url'] = self.ui_t['lurl'].text()
+                    self.parent_setting['url'] = _Widget.url.text()
                     ShowMessage("url update!", self)
                     self.changeUrl(0)
 
         return super(WMapper, self).eventFilter(Type, Event)
 
     def showEvent(self, a0: QShowEvent):
-        self.ui_t['lurl'].setText(self.parent_setting['url'])
+        _Widget.url.setText(self.parent_setting['url'])
 
     def closeEvent(self, a0: QCloseEvent):
         self.deleteLater()
