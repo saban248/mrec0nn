@@ -63,7 +63,7 @@ class ThreadMapper(QThread):
 
     emitFinish = pyqtSignal(int)
     emitError = pyqtSignal(str)
-    emitOutput = pyqtSignal(list)
+    emitOutput = pyqtSignal(dict)
 
     def __init__(self, parent_setting, *args, **kwargs):
         super(ThreadMapper, self).__init__(*args, **kwargs)
@@ -76,7 +76,7 @@ class ThreadMapper(QThread):
     def run(self) -> None:
 
         result = self.mapper.Start()
-        if isinstance(result, list):
+        if isinstance(result, dict):
             self.emitOutput.emit(result)
         else:
             self.emitError.emit(result)
@@ -105,7 +105,18 @@ class Mapper(VerifyRequestStatusCode):
         else:
             return "no links found!"
 
-        return self.Indexes
+        root = {}
+        self.tree_indexes(self.Indexes, root)
+        return root
+
+    def tree_indexes(self, indexes:list, root:dict):
+        for index in indexes:
+            _lst = [part for part in index.split("/") if part]
+            current = root
+            for path in _lst:
+                if path not in current:
+                    current[path] = {}
+                current = current[path]
 
     def _clear_indexes(self, indexes: list):
         domain = clsAddress(self.url)[0]
@@ -127,7 +138,28 @@ class Mapper(VerifyRequestStatusCode):
 
 
 # https://www.itsafe.co.il/ http://18.158.46.251:8700
-# d = Mapper({"url": "http://127.0.0.1/dvir"}, {'length':0})
-# for indexes in d.Start():
-#     print(indexes)
-#
+
+def create_listdir(lst:list[str]):
+    root = {}
+    for i in lst:
+        t(i, root)
+    return root
+
+
+
+def t(p, _root: dict):
+    parts = [part for part in p.split('/') if part]  # Split path and remove empty parts
+    current = _root
+
+    for part in parts:
+        if part not in current:
+            current[part] = {}
+        current = current[part]
+
+    return _root
+
+if __name__ == "__main__":
+    d = Mapper({"url": "http://127.0.0.1/"}, {'length': 0})
+    data = d.Start()
+    for i in data.items():
+        print(i)

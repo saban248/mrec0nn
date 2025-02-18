@@ -17,7 +17,7 @@ class WWelcome(QScrollArea):
         # self.psu = psu
         # self.target = surl
         self.Style = Style()
-        self.animate: AnimateText = None
+        self.animate: AnimateText | None = None
         self.address = None
         # /* win setting */
 

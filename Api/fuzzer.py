@@ -98,11 +98,11 @@ class MGetFuzzer:
 
     def _check_status_code(self):
         while self.total < self.size or not self.cancel:
-            if self.status_code_valid['crashed'] > 200:
+            if self.status_code_valid['crashed'] > 500:
                 self.cancel = 1
                 self.about_cancel = "server return 500/501/502,\nmaybe server crashed!"
                 break
-            elif self.status_code_valid['denied'] > 200:
+            elif self.status_code_valid['denied'] > 500:
                 self.cancel = 1
                 self.about_cancel = "server return 403,\nmaybe your ip denied!"
                 break
