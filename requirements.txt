@@ -1,0 +1,4 @@
+# Runtime dependencies for mrec0nn
+PyQt5>=5.15.9,<6
+requests>=2.31,<3
+pyperclip>=1.8,<2
